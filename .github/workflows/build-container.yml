@@ -49,14 +49,12 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.imageName }}
-          flavor: |
-            latest=${{ github.ref == 'refs/heads/main' }}
           tags: |
             type=ref,event=branch
             type=sha
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
-        if: github.event_name != 'pull_request'
+        if: ${{ github.ref_type == 'tag' || github.ref_name == 'main' }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -67,6 +65,8 @@ jobs:
           context: ${{ matrix.dirName }}
           file: "${{ matrix.dirName }}/Dockerfile"
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.ref_type == 'tag' || github.ref_name == 'main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
