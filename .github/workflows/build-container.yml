@@ -1,0 +1,62 @@
+name: Build Container Images
+on:
+  push:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set matrix
+        id: matrix
+        run: |
+          # Find all Dockerfiles in the repository and build a JSON matrix
+          files=$(find . -name Dockerfile -print0 | sort -z | tr '\0' '\n')
+          # Strip the Dockerfile from the end of the path
+          files=$(echo "$files" | sed -E 's|/Dockerfile$||')
+          printf "Found directories with Dockerfiles:\n$files\n"
+          matrix=$(jq -n --arg files "$files" '{include: ($files | split("\n") | map(select(. != "")) | map({imageName: . | ltrimstr("./"), dirName: .}))}')
+          echo "::set-output name=matrix::$(echo "$matrix" | jq -r @json)"
+
+  check-matrix:
+    runs-on: ubuntu-latest
+    needs: matrix
+    steps:
+      - name: Check matrix definition
+        run: |
+          matrix='${{ needs.matrix.outputs.matrix }}'
+          echo $matrix
+          echo $matrix | jq .
+
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+    needs: matrix
+    strategy:
+      matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Container Image
+        working-directory: ${{ matrix.dirName }}
+        run: |
+          echo "Building ${{ matrix.imageName }} from ${{ matrix.dirName }}"
+          docker build -t ${{ matrix.imageName }} .
+
+  push:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and Push Docker Image
+        working-directory: ${{ matrix.dir }}
+        run: |
+          echo "Building ${{ matrix.imageName }} from ${{ matrix.dirName }}"
+          docker build -t ${{ matrix.imageName }} .
+          echo "Pushing ${{ matrix.imageName }} to ghcr.io"
+          docker tag ${{ matrix.imageName }} ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER }}/${{ matrix.imageName }}
+          docker push ghcr.io/${{ github.repository }}/${{ matrix.imageName }}

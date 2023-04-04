@@ -10,7 +10,7 @@ ADD https://github.com/quietvoid/dovi_tool/releases/download/${DOVI_TOOL_VERSION
 RUN tar -xvf /tmp/dovi_tool-2.0.3-x86_64-unknown-linux-musl.tar.gz -C /usr/local/bin
 RUN mkdir /opt/media
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # clean up
 RUN rm -rf /tmp/*
