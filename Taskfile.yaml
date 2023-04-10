@@ -1,0 +1,97 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  build:
+    silent: true
+    cmds:
+      - task build:container FOLDER=mediainfo
+      - task build:container FOLDER=dovi_tool
+
+  build:container:
+    vars:
+      FOLDER: "{{.FOLDER}}"
+    dir: "{{.TASKFILE_DIR}}/{{.FOLDER}}"
+    silent: true
+    cmds:
+      - docker build -t riweston/{{.FOLDER}} -f Dockerfile .
+
+  run:get-profile:
+    silent: true
+    vars:
+      FILE: "{{.FILE}}"
+    cmds:
+      - task: check-file-exists
+        vars:
+          FILE: "{{.FILE}}"
+      - docker run --rm -v {{ .TASKFILE_DIR }}/{{.FILE}}:/tmp/{{.FILE}} riweston/mediainfo /tmp/{{.FILE}} | jq '.media.track[] | select(.HDR_Format_Profile != null) | .HDR_Format_Profile'
+  run:convert-file:
+    silent: true
+    vars:
+      FILE: "{{.FILE}}"
+    cmds:
+      - task: check-file-exists
+        vars:
+          FILE: "{{.FILE}}"
+      - FOLDERNAME=$(dirname {{.FILE}})
+      - docker run --rm -v {{ .TASKFILE_DIR }}/$FOLDERNAME:/opt/media/ riweston/dovi_tool {{.FILE}}
+
+  test:
+    silent: true
+    cmds:
+      - task test:run
+  test:create-test-file:
+    silent: true
+    vars:
+      FILE: "{{.FILE}}"
+    cmds:
+      - task: check-file-exists
+        vars:
+          FILE: "{{.FILE}}"
+      - FILENAME=$(basename {{.FILE}})
+      - cp {{.FILE}} test/$FILENAME
+  test:init-test-files:
+    silent: true
+    cmds:
+      # TODO: This sample is large and in my gitignore, so it's not included in the repo
+      - task test:create-test-file FILE=samples/awaken-girl.4K.HDR.DV.mkv
+      # TODO: These samples are not working yet
+      #- task test:create-test-file FILE=samples/dv7.mkv
+      #- task test:create-test-file FILE=samples/dv8.mkv
+  test:run:
+    silent: true
+    vars:
+      FILE: "{{.FILE}}"
+    cmds:
+      - |
+        if [[ "$(task run:get-profile FILE={{.FILE}})" == *"dvhe.07"* ]]; then
+          echo "Profile 7 detected for {{.FILE}}"
+          echo "Converting {{.FILE}}"
+          task run:convert-file FILE={{.FILE}}
+          echo "Converted {{.FILE}}"
+          echo "Profile for {{.FILE}} is now: $(task run:get-profile FILE={{.FILE}})"
+        else
+          echo "Profile 7 not detected for {{.FILE}}"
+        fi
+
+  test:samples:
+    silent: true
+    cmds:
+      - task test:init-test-files
+      - task test:run FILE=test/awaken-girl.4K.HDR.DV.mkv
+      # TODO: These samples are not working yet
+      #- task test:run FILE=test/dv7.mkv
+      #- task test:run FILE=test/dv8.mkv
+
+  check-file-exists:
+    internal: true
+    silent: true
+    vars:
+      FILE: "{{.FILE}}"
+    cmds:
+      - |
+        if [ ! -f "{{.FILE}}" ]; then
+          echo "File {{.FILE}} does not exist"
+          exit 1
+        fi
