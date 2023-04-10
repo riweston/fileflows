@@ -25,7 +25,7 @@ tasks:
       - task: check-file-exists
         vars:
           FILE: "{{.FILE}}"
-      - docker run --rm -v {{ .TASKFILE_DIR }}/{{.FILE}}:/tmp/{{.FILE}} riweston/mediainfo /tmp/{{.FILE}} | jq '.media.track[] | select(.HDR_Format_Profile != null) | .HDR_Format_Profile'
+      - docker run --rm -v {{ .TASKFILE_DIR }}/{{.FILE}}:/opt/media/{{.FILE}} riweston/mediainfo {{.FILE}} | jq '.media.track[] | select(.HDR_Format_Profile != null) | .HDR_Format_Profile'
   run:convert-file:
     silent: true
     vars:
@@ -40,7 +40,7 @@ tasks:
   test:
     silent: true
     cmds:
-      - task test:run
+      - task test:samples
   test:create-test-file:
     silent: true
     vars:

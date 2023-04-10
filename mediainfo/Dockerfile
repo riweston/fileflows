@@ -4,4 +4,6 @@ LABEL org.opencontainers.image.description "This image provides a containerized 
 
 RUN apk add --no-cache mediainfo
 
+WORKDIR /opt/media
+
 ENTRYPOINT [ "mediainfo", "--Output=JSON" ]

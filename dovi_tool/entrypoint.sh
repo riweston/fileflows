@@ -5,7 +5,7 @@ IFS=$(echo -en "\n\b")
 
 # Cleanup function to remove any leftover files
 cleanup() {
-	rm -f "${1%.*}.hevc" "${1%.*}.mkv.tmp"
+	rm -f "${1%.*}.hevc" "${1%.*}.mkv.tmp" "${1%.*}.mkv.copy" BL_RPU.hevc
 }
 
 # Sanity check
