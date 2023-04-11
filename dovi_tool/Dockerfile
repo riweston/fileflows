@@ -11,6 +11,7 @@ RUN tar -xvf /tmp/dovi_tool-2.0.3-x86_64-unknown-linux-musl.tar.gz -C /usr/local
 RUN mkdir /opt/media
 
 COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 RUN rm -rf /tmp/*
 
