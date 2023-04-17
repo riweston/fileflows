@@ -57,7 +57,7 @@ get_dvhe_profile() {
 	else
 		# DV profile is not found, exit without processing
 		echo "DVHE ${2} profile not found"
-		exit 1
+		exit 0
 	fi
 }
 
