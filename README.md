@@ -1,4 +1,4 @@
-# Fileflows
+# README
 
 ## Overview
 
@@ -7,52 +7,42 @@ my personal media collection and plug into [Fileflows](https://fileflows.com).
 
 As this interacts with my personal media collection, I've tried to be particularly
 careful to not make any destructive changes to the data hence there a few
-precautions in place including jest tests and a taskfile to run the scripts and
-verify the output.
-
-## Build & Test
-
-The [taskfile](https://taskfile.dev) is a wrapper around the scripts and containers to make it easier to
-run them. It also has a few tasks to help with testing.
-
-- `task build` - Build the containers
-- `task test` - Run a test conversion including checking the profile
+precautions in place.
 
 ## Containers
 
-### mediainfo
-
-This container is a wrapper around [mediainfo](https://mediaarea.net/en/MediaInfo)
-to provide a consistent interface for getting information about media files.
-
-You can run the container directly with:
-
-```bash
-task run:get-profile FILE=samples/awaken-girl.4K.HDR.DV.mkv # or any other file
-```
-
 ### dovi_tool
 
-This container includes a collection of tools required to demux and remux a
-media file with a Dolby Vision profile, I'm assuming 'dvhe.07', and then convert
-the profile to 'dvhe.08'. The entrypoint script will run the following steps:
+#### Overview
 
-1. Demux the Dolby Vision profile from the media file using ffmpeg and [dovi_tool](https://github.com/quietvoid/dovi_tool)
-2. Remux the file using `mkvmerge` from [MKVToolNix](https://mkvtoolnix.download)
+This is a container that I use to run [dovi_tool](https://github.com/quietvoid/dovi_tool)
+to convert the Dolby Vision metadata in my media collection to a format that
+Infuse can understand.
 
-⚠️ This is destructive
-3. Overwrite the original file with the new file
+#### Tools Used
 
-You can run the container directly with:
+- dovi_tool
+- ffmpeg
+- mediainfo
+- jq
+- mkvtoolnix
+- mkvmerge
+
+Everything is handled from the [`entrypoint.sh`](./dovi_tool/entrypoint.sh) script.
+
+#### Usage
+
+> **Warning**: This will overwrite the original file if the target profile is found.
 
 ```bash
-task run:convert-file FILE=test/awaken-girl.4K.HDR.DV.mkv # or any other file
+#docker run --rm -it -v /path/to/media:/opt/media ghcr.io/riweston/dovi_tool:latest <filename> <profile>
+
+$ docker run --rm -it -v /path/to/media:/opt/media ghcr.io/riweston/dovi_tool:latest Dune.mkv dvhe.07
 ```
 
-## TODO
+#### Fileflows
 
-- [x] Fileflow workflow to identify files that need to be converted
-- [x] Container to identify a file
-- [ ] Fileflow workflow to convert files
-- [x] Container to convert a file
-- [ ] Integrate scripts into Fileflow
+The container is used in conjunction with [Fileflows](https://fileflows.com) to
+manage my media collection. I've written a custom function to incorporate the
+dovi_tool container into a workflow which can be found in
+[`./scripts/Convert-dolbyvision-profile.js`](./scripts/Convert-dolbyvision-profile.js).
