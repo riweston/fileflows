@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "jest": "^29.5.0",
-    "logger": "^0.0.1"
-  },
-  "scripts": {
-    "test": "jest"
-  }
-}
