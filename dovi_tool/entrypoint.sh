@@ -4,37 +4,41 @@ set -eo pipefail
 IFS=$(echo -en "\n\b")
 
 # Sanity check
-sanity_check() {
-	if ! command -v ffmpeg >/dev/null 2>&1; then
-		echo "ffmpeg could not be found"
-		exit 1
-	fi
+if ! command -v mediainfo >/dev/null 2>&1; then
+	echo "mediainfo could not be found"
+	exit 1
+fi
 
-	if ! command -v dovi_tool >/dev/null 2>&1; then
-		echo "dovi_tool could not be found"
-		exit 1
-	fi
+if ! command -v ffmpeg >/dev/null 2>&1; then
+	echo "ffmpeg could not be found"
+	exit 1
+fi
 
-	if ! command -v mkvmerge >/dev/null 2>&1; then
-		echo "mkvmerge could not be found"
-		exit 1
-	fi
+if ! command -v dovi_tool >/dev/null 2>&1; then
+	echo "dovi_tool could not be found"
+	exit 1
+fi
 
-	if ! command -v jq >/dev/null 2>&1; then
-		echo "jq could not be found"
-		exit 1
-	fi
+if ! command -v mkvmerge >/dev/null 2>&1; then
+	echo "mkvmerge could not be found"
+	exit 1
+fi
 
-	if [ -z "${1+x}" ]; then
-		echo "Usage: $0 <filename>"
-		exit 1
-	fi
+if ! command -v jq >/dev/null 2>&1; then
+	echo "jq could not be found"
+	exit 1
+fi
 
-	if [ ! -f "$1" ]; then
-		echo "$1 is not a file"
-		exit 1
-	fi
-}
+if [ -z "${1+x}" ] || [ -z "${2+x}" ]; then
+	echo "Usage: $0 <filename> <profile>"
+	echo "Valid profiles: dvhe.07"
+	exit 1
+fi
+
+if [ ! -f "$1" ]; then
+	echo "$1 is not a file"
+	exit 1
+fi
 
 # Cleanup function to remove any leftover files
 cleanup() {
@@ -119,7 +123,6 @@ overwrite_file() {
 
 main() {
 	trap 'echo "Error: $0:$LINENO: Command \`$BASH_COMMAND\` on line $LINENO failed with exit code $?" >&2; cleanup $1' ERR
-	sanity_check "$1"
 	get_dvhe_profile "$1" "$2"
 	demux_file "$1"
 	remux_file "$1"
