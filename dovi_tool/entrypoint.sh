@@ -82,9 +82,9 @@ demux_file() {
 remux_file() {
 	echo "Remuxing $1..."
 	echo "------------------"
-	echo "mkvmerge -o ${1%.*}.mkv.tmp -D $1 BL_RPU.hevc"
+	echo "mkvmerge -o ${1%.*}.mkv.tmp BL_RPU.hevc -D $1"
 	echo "------------------"
-	if ! mkvmerge -o "${1%.*}.mkv.tmp" -D "$1" BL_RPU.hevc; then
+	if ! mkvmerge -o "${1%.*}.mkv.tmp" BL_RPU.hevc -D "$1"; then
 		echo "Failed to remux $1"
 		cleanup "$1"
 		exit 1
