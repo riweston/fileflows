@@ -7,7 +7,7 @@ LABEL org.opencontainers.image.description "This image provides a containerized 
 RUN apk add --no-cache mediainfo jq
 RUN apk add mkvtoolnix --repository http://dl-3.alpinelinux.org/alpine/edge/main
 ADD https://github.com/quietvoid/dovi_tool/releases/download/${DOVI_TOOL_VERSION}/dovi_tool-${DOVI_TOOL_VERSION}-${DOVI_TOOL_ARCH}.tar.gz /tmp
-RUN tar -xvf /tmp/dovi_tool-${DOVI_TOOL_VERSION}-${DOVI_TOOL_ARCH}.tar.gz -C /tmp
+RUN tar -xvf /tmp/dovi_tool-${DOVI_TOOL_VERSION}-${DOVI_TOOL_ARCH}.tar.gz -C /usr/local/bin
 RUN mkdir /opt/media
 
 COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
