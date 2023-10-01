@@ -9,11 +9,6 @@ if ! command -v mediainfo >/dev/null 2>&1; then
 	exit 1
 fi
 
-if ! command -v ffmpeg >/dev/null 2>&1; then
-	echo "ffmpeg could not be found"
-	exit 1
-fi
-
 if ! command -v dovi_tool >/dev/null 2>&1; then
 	echo "dovi_tool could not be found"
 	exit 1
