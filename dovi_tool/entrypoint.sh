@@ -43,7 +43,7 @@ fi
 # Cleanup function to remove any leftover files
 cleanup() {
 	echo "Cleaning up working files..."
-	rm -f "${1%.*}.hevc" "${1%.*}.mkv.tmp" "${1%.*}.mkv.copy" BL_RPU.hevc
+	rm -f "${1%.*}.hevc" "${1%.*}.mkv.tmp" "${1%.*}.mkv.copy" "${1%.*}.dv8.hevc" "${1%.*}.rpu.bin"
 }
 
 # Get DV profile information using mediainfo
@@ -65,26 +65,73 @@ get_dvhe_profile() {
 	fi
 }
 
-# Demux the file using ffmpeg and dovi_tool
-demux_file() {
-	echo "Demuxing $1..."
+extract_mkv() {
+	echo "Extracting $1..."
 	echo "------------------"
-	echo "ffmpeg -i $1 -c:v copy -vbsf hevc_mp4toannexb -f hevc - | dovi_tool -m 2 convert --discard -"
+	echo "mkvextract $1 tracks 0:${1%.*}.hevc"
 	echo "------------------"
-	if ! ffmpeg -i "$1" -c:v copy -vbsf hevc_mp4toannexb -f hevc - | dovi_tool -m 2 convert --discard -; then
-		echo "Failed to demux $1"
+	if ! mkvextract "$1" tracks 0:"${1%.*}.hevc"; then
+		echo "Failed to extract $1"
 		cleanup "$1"
 		exit 1
 	fi
+}
+
+convert_mkv() {
+	echo "Converting $1..."
+	echo "------------------"
+	echo "dovi_tool --edit-config /config/dovi_tool.config.json convert --discard ${1%.*}.hevc -o ${1%.*}.dv8.hevc"
+	echo "------------------"
+	if ! dovi_tool --edit-config /config/dovi_tool.config.json convert --discard "${1%.*}.hevc" -o "${1%.*}.dv8.hevc"; then
+		echo "Failed to convert $1"
+		cleanup "$1"
+		exit 1
+	fi
+}
+
+extract_rpu() {
+	echo "Extracting RPU from ${1%.*}.dv8.hevc..."
+	echo "------------------"
+	echo "dovi_tool extract-rpu ${1%.*}.dv8.hevc -o ${1%.*}.rpu.bin"
+	echo "------------------"
+	if ! dovi_tool extract-rpu "${1%.*}.dv8.hevc" -o "${1%.*}.rpu.bin"; then
+		echo "Failed to extract RPU from ${1%.*}.dv8.hevc"
+		cleanup "$1"
+		exit 1
+	fi
+}
+
+create_plot() {
+	echo "Creating plot from RPU..."
+	echo "------------------"
+	echo "dovi_tool plot ${1%.*}.rpu.bin -o ${1%.*}.l1_plot.png"
+	echo "------------------"
+	if ! dovi_tool plot "${1%.*}.rpu.bin" -o "${1%.*}.l1_plot.png"; then
+		echo "Failed to create plot from RPU"
+		cleanup "$1"
+		exit 1
+	fi
+}
+
+# Demux the file using ffmpeg and dovi_tool
+demux_file() {
+	# These functions are lifted from this post, all credit to author speedy
+	# https://community.firecore.com/t/dolby-vision-profile-7-8-support-ts-mkv-files/19713/846?page=43
+	echo "Demuxing $1..."
+	echo "------------------"
+	extract_mkv "$1"
+	convert_mkv "$1"
+	extract_rpu "$1"
+	create_plot "$1"
 }
 
 # Remux the file using mkvmerge
 remux_file() {
 	echo "Remuxing $1..."
 	echo "------------------"
-	echo "mkvmerge -o ${1%.*}.mkv.tmp -D $1 BL_RPU.hevc"
+	echo "mkvmerge -o ${1%.*}.mkv.tmp -D $1 ${1%.*}.dv8.hevc --track-order 1:0"
 	echo "------------------"
-	if ! mkvmerge -o "${1%.*}.mkv.tmp" -D "$1" BL_RPU.hevc; then
+	if ! mkvmerge -o "${1%.*}.mkv.tmp" -D "$1" "${1%.*}.dv8.hevc" --track-order 1:0; then
 		echo "Failed to remux $1"
 		cleanup "$1"
 		exit 1

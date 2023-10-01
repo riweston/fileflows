@@ -13,6 +13,8 @@ RUN mkdir /opt/media
 COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+COPY ./dovi_tool.config.json /config/dovi_tool.config.json
+
 RUN rm -rf /tmp/*
 
 WORKDIR /opt/media
